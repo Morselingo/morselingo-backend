@@ -1,0 +1,49 @@
+services:
+  go-app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: morse-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - valkey
+    env_file:
+      - .env.dev
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    env_file:
+      - .env.dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - backend
+
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    command: valkey-server --requirepass $${VALKEY_PASSWORD}
+    env_file:
+    - .env.dev
+    volumes:
+      - valkey_data:/data
+    networks:
+      - backend
+
+volumes:
+  pg_data:
+  valkey_data:
+
+networks:
+  backend:
+    driver: bridge
