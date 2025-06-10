@@ -25,7 +25,7 @@ func (handler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request)
 	var registerUserInput model.RegisterUserInput
 	err := json.NewDecoder(r.Body).Decode(&registerUserInput)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest) //TODO: change this to not leak error to client (only debug)
 		return
 	}
 

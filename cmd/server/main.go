@@ -16,7 +16,7 @@ import (
 
 func main() {
 	postgers := loadPostgres()
-	valkey := loadValkey()
+	// valkey := loadValkey()
 
 	// repository
 	userRepository := repository.NewUserRepository(postgers)
