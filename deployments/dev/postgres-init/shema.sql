@@ -1,7 +1,7 @@
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username varchar(32) UNIQUE NOT NULL,
-  password_hash varchar(255) NOT NULL,
+  password_hash varchar(100) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
