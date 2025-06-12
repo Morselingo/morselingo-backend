@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Morselingo/morselingo-backend/internal/auth"
 	"github.com/Morselingo/morselingo-backend/internal/handler"
 	"github.com/Morselingo/morselingo-backend/internal/repository"
 	"github.com/Morselingo/morselingo-backend/internal/router"
@@ -15,6 +16,10 @@ import (
 )
 
 func main() {
+	if err := auth.InitializeAuthentication(os.Getenv("JWT_SECRET_KEY")); err != nil {
+		log.Fatal("Failed to initialize JWT Secret Key")
+	}
+
 	postgers := loadPostgres()
 	// valkey := loadValkey()
 
@@ -28,7 +33,7 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 
 	// router
-	authRouter := router.AuthRouter(userHandler.RegisterUser)
+	authRouter := router.AuthRouter(userHandler.RegisterUser, userHandler.LoginUser)
 	chatRouter := router.ChatRouter()
 	leaderbordRouter := router.LeaderbordRouter()
 

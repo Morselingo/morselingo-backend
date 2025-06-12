@@ -2,8 +2,6 @@ package model
 
 import (
 	"time"
-
-	"github.com/go-playground/validator/v10"
 )
 
 type RegisterUserInput struct {
@@ -17,8 +15,6 @@ type User struct {
 	PasswordHash string    `json:"password" validate:"required,min=8,max=100"`
 	CreationTime time.Time `json:"created_at" validate:"required"`
 }
-
-var validate = validator.New()
 
 func ValidateRegisterUserInput(userInput RegisterUserInput) error {
 	return validate.Struct(userInput)

@@ -4,9 +4,10 @@ import (
 	"net/http"
 )
 
-func AuthRouter(registrationHandler http.HandlerFunc) http.Handler {
+func AuthRouter(registrationHandler, loginHandler http.HandlerFunc) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/register", registrationHandler)
+	mux.HandleFunc("/login", loginHandler)
 	return mux
 }
 

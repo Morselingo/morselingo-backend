@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Morselingo/morselingo-backend/internal/auth"
 	"github.com/Morselingo/morselingo-backend/internal/model"
 	"github.com/Morselingo/morselingo-backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -11,6 +12,7 @@ import (
 
 type UserService interface {
 	RegisterUser(ctx context.Context, registerUserInput model.RegisterUserInput) error
+	LoginUser(ctx context.Context, loginRequest model.LoginRequest) (string, error)
 }
 
 type userService struct {
@@ -27,18 +29,37 @@ func (service *userService) RegisterUser(ctx context.Context, registerUserInput 
 		return err
 	}
 	if exists {
-		return errors.New("user already exists")
+		return ErrorUserAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerUserInput.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.New("failed to hash password")
+		return ErrorFailedToHashPassword
 	}
 
-	err = service.repository.CreateUser(ctx, registerUserInput.Name, string(hashedPassword))
-	if err != nil {
-		return err
+	if err := service.repository.CreateUser(ctx, registerUserInput.Name, string(hashedPassword)); err != nil {
+		return ErrorCreateUserFailed
 	}
 
 	return nil
+}
+
+func (service *userService) LoginUser(ctx context.Context, loginRequest model.LoginRequest) (string, error) {
+	user, err := service.repository.GetUserByName(ctx, loginRequest.Name)
+	if err != nil {
+		if errors.Is(err, repository.ErrorUserNotFound) {
+			return "", ErrorUserNotFound
+		}
+		return "", err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginRequest.Password)); err != nil {
+		return "", ErrorAuthenticationFailed
+	}
+
+	token, err := auth.GenerateToken(user.Name)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }

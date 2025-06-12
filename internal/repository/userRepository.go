@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Morselingo/morselingo-backend/internal/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -12,6 +13,7 @@ import (
 type UserRepository interface {
 	CreateUser(context context.Context, name string, passwordHash string) error
 	UserExistsByName(context context.Context, name string) (bool, error)
+	GetUserByName(context context.Context, name string) (model.User, error)
 }
 
 type userRepository struct {
@@ -51,4 +53,19 @@ func (repository userRepository) UserExistsByName(ctx context.Context, name stri
 	}
 
 	return true, nil
+}
+
+func (repository userRepository) GetUserByName(ctx context.Context, name string) (model.User, error) {
+	query := `SELECT id, username, hashed_password, created_at FROM users WHERE username = $1`
+
+	var user model.User
+	err := repository.db.QueryRow(ctx, query, name).Scan(&user.Id, &user.Name, &user.PasswordHash, &user.CreationTime)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return model.User{}, ErrorUserNotFound
+		}
+		return model.User{}, fmt.Errorf("failed to get user by name '%s': %w", name, err)
+	}
+
+	return user, nil
 }
