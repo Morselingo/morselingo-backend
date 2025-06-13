@@ -55,16 +55,16 @@ func (repository userRepository) UserExistsByName(ctx context.Context, name stri
 	return true, nil
 }
 
-func (repository userRepository) GetUserByName(ctx context.Context, name string) (model.User, error) {
-	query := `SELECT id, username, hashed_password, created_at FROM users WHERE username = $1`
+func (repository userRepository) GetUserByName(ctx context.Context, username string) (model.User, error) {
+	query := `SELECT id, username, password_hash, created_at FROM users WHERE username = $1`
 
 	var user model.User
-	err := repository.db.QueryRow(ctx, query, name).Scan(&user.Id, &user.Name, &user.PasswordHash, &user.CreationTime)
+	err := repository.db.QueryRow(ctx, query, username).Scan(&user.Id, &user.Username, &user.PasswordHash, &user.CreationTime)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.User{}, ErrorUserNotFound
 		}
-		return model.User{}, fmt.Errorf("failed to get user by name '%s': %w", name, err)
+		return model.User{}, fmt.Errorf("failed to get user by name '%s': %w", username, err)
 	}
 
 	return user, nil

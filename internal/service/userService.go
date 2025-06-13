@@ -11,7 +11,7 @@ import (
 )
 
 type UserService interface {
-	RegisterUser(ctx context.Context, registerUserInput model.RegisterUserInput) error
+	RegisterUser(ctx context.Context, registerRequest model.RegisterRequest) error
 	LoginUser(ctx context.Context, loginRequest model.LoginRequest) (string, error)
 }
 
@@ -23,8 +23,8 @@ func NewUserService(repository repository.UserRepository) UserService {
 	return &userService{repository: repository}
 }
 
-func (service *userService) RegisterUser(ctx context.Context, registerUserInput model.RegisterUserInput) error {
-	exists, err := service.repository.UserExistsByName(ctx, registerUserInput.Name)
+func (service *userService) RegisterUser(ctx context.Context, registerRequest model.RegisterRequest) error {
+	exists, err := service.repository.UserExistsByName(ctx, registerRequest.Username)
 	if err != nil {
 		return err
 	}
@@ -32,12 +32,12 @@ func (service *userService) RegisterUser(ctx context.Context, registerUserInput 
 		return ErrorUserAlreadyExists
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerUserInput.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerRequest.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return ErrorFailedToHashPassword
 	}
 
-	if err := service.repository.CreateUser(ctx, registerUserInput.Name, string(hashedPassword)); err != nil {
+	if err := service.repository.CreateUser(ctx, registerRequest.Username, string(hashedPassword)); err != nil {
 		return ErrorCreateUserFailed
 	}
 
@@ -45,7 +45,7 @@ func (service *userService) RegisterUser(ctx context.Context, registerUserInput 
 }
 
 func (service *userService) LoginUser(ctx context.Context, loginRequest model.LoginRequest) (string, error) {
-	user, err := service.repository.GetUserByName(ctx, loginRequest.Name)
+	user, err := service.repository.GetUserByName(ctx, loginRequest.Username)
 	if err != nil {
 		if errors.Is(err, repository.ErrorUserNotFound) {
 			return "", ErrorUserNotFound
@@ -57,9 +57,10 @@ func (service *userService) LoginUser(ctx context.Context, loginRequest model.Lo
 		return "", ErrorAuthenticationFailed
 	}
 
-	token, err := auth.GenerateToken(user.Name)
+	token, err := auth.GenerateToken(user.Username)
 	if err != nil {
 		return "", err
 	}
+
 	return token, nil
 }

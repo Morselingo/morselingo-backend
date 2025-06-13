@@ -20,21 +20,24 @@ func main() {
 		log.Fatal("Failed to initialize JWT Secret Key")
 	}
 
-	postgers := loadPostgres()
+	postgres := loadPostgres()
 	// valkey := loadValkey()
 
 	// repository
-	userRepository := repository.NewUserRepository(postgers)
+	userRepository := repository.NewUserRepository(postgres)
+	chatRepository := repository.NewChatRepository(postgres)
 
 	//  service
 	userService := service.NewUserService(userRepository)
+	chatService := service.NewChatService(chatRepository)
 
 	// handler
 	userHandler := handler.NewUserHandler(userService)
+	chatHandler := handler.NewChatHandler(chatService)
 
 	// router
 	authRouter := router.AuthRouter(userHandler.RegisterUser, userHandler.LoginUser)
-	chatRouter := router.ChatRouter()
+	chatRouter := router.ChatRouter(chatHandler.SendMessage)
 	leaderbordRouter := router.LeaderbordRouter()
 
 	rootMux := http.NewServeMux()

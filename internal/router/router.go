@@ -2,6 +2,8 @@ package router
 
 import (
 	"net/http"
+
+	"github.com/Morselingo/morselingo-backend/internal/auth"
 )
 
 func AuthRouter(registrationHandler, loginHandler http.HandlerFunc) http.Handler {
@@ -11,9 +13,9 @@ func AuthRouter(registrationHandler, loginHandler http.HandlerFunc) http.Handler
 	return mux
 }
 
-func ChatRouter() http.Handler {
+func ChatRouter(sendMessageHandler http.HandlerFunc) http.Handler {
 	mux := http.NewServeMux()
-	// mux.HandleFunc("")
+	mux.Handle("/send", auth.JWTMiddleware(sendMessageHandler))
 	return mux
 }
 

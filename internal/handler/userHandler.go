@@ -23,15 +23,18 @@ func (handler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var registerUserInput model.RegisterUserInput
-	err := json.NewDecoder(r.Body).Decode(&registerUserInput)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest) //TODO: change this to not leak error to client (only debug)
+	var registerRequest model.RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = handler.service.RegisterUser(r.Context(), registerUserInput)
-	if err != nil {
+	if err := model.ValidateRegisterRequest(registerRequest); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := handler.service.RegisterUser(r.Context(), registerRequest); err != nil {
 		if errors.Is(err, service.ErrorUserAlreadyExists) {
 			http.Error(w, err.Error(), http.StatusConflict)
 		} else {
@@ -41,7 +44,6 @@ func (handler *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
 }
 
 func (handler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -50,14 +52,18 @@ func (handler *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var loginUserInput model.LoginRequest
-	err := json.NewDecoder(r.Body).Decode(&loginUserInput)
-	if err != nil {
+	var loginRequest model.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	token, err := handler.service.LoginUser(r.Context(), loginUserInput)
+	if err := model.ValidateLoginUserInput(loginRequest); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := handler.service.LoginUser(r.Context(), loginRequest)
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
