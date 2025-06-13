@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -30,6 +32,11 @@ func InitializeAuthentication(secretKey string) error {
 }
 
 func GenerateToken(username string) (string, error) {
+	jti, err := generateRandomID()
+	if err != nil {
+		return "", err
+	}
+
 	currentTime := time.Now()
 	claims := Claims{
 		Username: username,
@@ -38,6 +45,7 @@ func GenerateToken(username string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(currentTime),
 			NotBefore: jwt.NewNumericDate(currentTime),
 			Subject:   username,
+			ID:        jti,
 		},
 	}
 
@@ -47,4 +55,12 @@ func GenerateToken(username string) (string, error) {
 		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
 	return signedToken, nil
+}
+
+func generateRandomID() (string, error) {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("failed to generate random ID: %w", err)
+	}
+	return hex.EncodeToString(bytes), nil
 }

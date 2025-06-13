@@ -37,7 +37,7 @@ func main() {
 
 	// router
 	authRouter := router.AuthRouter(userHandler.RegisterUser, userHandler.LoginUser)
-	chatRouter := router.ChatRouter(chatHandler.SendMessage)
+	chatRouter := router.ChatRouter(chatHandler.SendMessage, chatHandler.Subscribe)
 	leaderbordRouter := router.LeaderbordRouter()
 
 	rootMux := http.NewServeMux()

@@ -4,16 +4,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Morselingo/morselingo-backend/internal/auth"
 	"github.com/Morselingo/morselingo-backend/internal/service"
-	"github.com/gorilla/websocket"
+	"github.com/Morselingo/morselingo-backend/internal/util"
 )
-
-var webSocketUpgrader = websocket.Upgrader{
-	//TODO: Remove this (allow cross origin for local development)
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
 
 type ChatHandler struct {
 	service service.ChatService
@@ -24,13 +18,20 @@ func NewChatHandler(service service.ChatService) *ChatHandler {
 }
 
 func (handler ChatHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
-	conn, err := webSocketUpgrader.Upgrade(w, r, nil)
+	conn, err := util.WebSocketUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Error upgrading WebSocket")
 		return
 	}
-	defer conn.Close()
-	//TODO: send new messages to the connected clients
+
+	username, ok := auth.GetUsernameFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+
+	client := util.NewWebSocketClient(conn, handler.service, username)
+	go client.Handle(r.Context())
 }
 
 func (handler ChatHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
