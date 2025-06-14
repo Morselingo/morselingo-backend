@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/Morselingo/morselingo-backend/internal/model"
-	"github.com/Morselingo/morselingo-backend/internal/repository"
 )
 
 type Client struct {
@@ -18,7 +17,6 @@ type ChatService interface {
 }
 
 type chatService struct {
-	repository repository.ChatRepository
 	clients    map[Client]bool
 	broadcast  chan model.Message
 	register   chan Client
@@ -26,9 +24,8 @@ type chatService struct {
 	mu         sync.RWMutex
 }
 
-func NewChatService(repository repository.ChatRepository) ChatService {
+func NewChatService() ChatService {
 	service := &chatService{
-		repository: repository,
 		clients:    make(map[Client]bool),
 		broadcast:  make(chan model.Message),
 		register:   make(chan Client),

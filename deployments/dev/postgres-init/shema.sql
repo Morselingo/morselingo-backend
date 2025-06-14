@@ -5,9 +5,11 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE messages (
+CREATE TABLE scores (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  message TEXT NOT NULL,
+  score NUMERIC(5,2) NOT NULL,
+  accuracy NUMERIC(5,2) NOT NULL,
+  duration BIGINT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );

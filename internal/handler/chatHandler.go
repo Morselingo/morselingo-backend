@@ -33,8 +33,3 @@ func (handler ChatHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	client := util.NewWebSocketClient(conn, handler.service, username)
 	go client.Handle(r.Context())
 }
-
-func (handler ChatHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Body)
-	w.WriteHeader(http.StatusAccepted)
-}

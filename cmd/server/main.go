@@ -25,11 +25,10 @@ func main() {
 
 	// repository
 	userRepository := repository.NewUserRepository(postgres)
-	chatRepository := repository.NewChatRepository(postgres)
 
 	//  service
 	userService := service.NewUserService(userRepository)
-	chatService := service.NewChatService(chatRepository)
+	chatService := service.NewChatService()
 
 	// handler
 	userHandler := handler.NewUserHandler(userService)
@@ -37,7 +36,7 @@ func main() {
 
 	// router
 	authRouter := router.AuthRouter(userHandler.RegisterUser, userHandler.LoginUser)
-	chatRouter := router.ChatRouter(chatHandler.SendMessage, chatHandler.Subscribe)
+	chatRouter := router.ChatRouter(chatHandler.Subscribe)
 	leaderbordRouter := router.LeaderbordRouter()
 
 	rootMux := http.NewServeMux()

@@ -32,7 +32,7 @@ func NewWebSocketClient(conn *websocket.Conn, chatService service.ChatService, u
 		conn:    conn,
 		service: chatService,
 		client: service.Client{
-			Conn: make(chan model.Message, 25),
+			Conn: make(chan model.Message, 100),
 		},
 		username: username,
 	}
@@ -41,10 +41,24 @@ func NewWebSocketClient(conn *websocket.Conn, chatService service.ChatService, u
 func (wsc *WebSocketClient) Handle(ctx context.Context) {
 	defer func() {
 		wsc.service.Unregister(wsc.client)
+		leaveMsg := model.Message{
+			Type:      model.UserLeftType,
+			Username:  wsc.username,
+			Content:   wsc.username + " disconnected.",
+			CreatedAt: time.Now(),
+		}
+		wsc.service.Broadcast(leaveMsg)
 		wsc.conn.Close()
 	}()
 
 	wsc.service.Register(wsc.client)
+	joinMsg := model.Message{
+		Type:      model.UserJoinedType,
+		Username:  wsc.username,
+		Content:   wsc.username + " connected.",
+		CreatedAt: time.Now(),
+	}
+	wsc.service.Broadcast(joinMsg)
 
 	go wsc.writePump()
 	wsc.readPump()
@@ -52,14 +66,25 @@ func (wsc *WebSocketClient) Handle(ctx context.Context) {
 
 func (wsc *WebSocketClient) readPump() {
 	for {
-		var message model.Message
-		if err := wsc.conn.ReadJSON(&message); err != nil {
-			//TODO: handle client disconnect
-			log.Println("read error message from client: ", err)
+		var userMessage model.UserMessage
+		if err := wsc.conn.ReadJSON(&userMessage); err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("Read error (unexpected ws close) for user %s: %v", wsc.username, err)
+			}
 			break
 		}
-		message.CreatedAt = time.Now()
-		message.Username = wsc.username
+
+		if err := model.ValidateUserMessage(userMessage); err != nil {
+			log.Printf("User '%s' send a ws message not adheerent to expected structure: %v", wsc.username, err)
+			continue
+		}
+
+		message := model.Message{
+			Type:      "user_message",
+			Username:  wsc.username,
+			CreatedAt: time.Now(),
+			Content:   userMessage.Content,
+		}
 		wsc.service.Broadcast(message)
 	}
 }

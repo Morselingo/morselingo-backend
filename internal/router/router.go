@@ -13,9 +13,8 @@ func AuthRouter(registrationHandler, loginHandler http.HandlerFunc) http.Handler
 	return mux
 }
 
-func ChatRouter(sendMessageHandler, subscribeHandler http.HandlerFunc) http.Handler {
+func ChatRouter(subscribeHandler http.HandlerFunc) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/send", auth.JWTMiddleware(sendMessageHandler))
 	mux.Handle("/ws", auth.JWTMiddleware(subscribeHandler))
 	return mux
 }
